@@ -4,7 +4,7 @@ public class AppMainMenu : Menu
 {
     private readonly JobManager _manager;
 
-    public AppMainMenu(JobManager manager) : base(MenuTitles.ConversionManagerTitle)
+    public AppMainMenu(JobManager manager) : base(MenuTitles.AppMain)
     {
         _manager = manager;
 

@@ -2,7 +2,7 @@
 
 public static class MenuTitles
 {
-    public static readonly string ConversionManagerTitle = "Conversion Manager";
+    public static readonly string AppMain = "Conversion Manager";
     
     public static readonly string AddJobTitle = "Add New Job";
     public static readonly string CancelSingleJobTitle = "Cancel One Job";
