@@ -103,7 +103,7 @@ public class JobManager(string workerExePath)
         throw new NotImplementedException();
     }
 
-    public ICollection<JobSnapshot> GetSnapshot()//----------------------
+    public ICollection<JobSnapshot> GetSnapshot()
     {
         lock (_lock)
         {
