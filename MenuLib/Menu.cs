@@ -70,17 +70,15 @@ public abstract class Menu
         Console.WriteLine("Type 'exit' to exit.");
     }
 
-    protected virtual void InternalDisplay()
-    {
-
-    }
+    protected virtual void InternalDisplay() { }
     
     protected void DrawMenu(int selectedIndex)
     {
         Console.Clear();
+        Console.CursorVisible = false;
         Console.WriteLine($"=== {Title} ===");
 
-        if (_options != null)
+        if (_options != null && _options.Length > 0)
         {
             for (int i = 0; i < _options.Length; i++)
             {
@@ -98,11 +96,21 @@ public abstract class Menu
                 }
             }
         }
-
+        
         InternalDisplay();
-
+        
+        Console.ForegroundColor = ConsoleColor.DarkGray;
         Console.WriteLine("\n--- Navigation ---");
-        Console.WriteLine("Enter - select   Backspace - back   R - refresh   X - exit");
+        
+        if (_options != null && _options.Length > 0)
+        {
+            Console.WriteLine("[↑/↓ or W/S] Move   [Enter] Select   [Backspace] Back   [X] Exit");
+        }
+        else
+        {
+            Console.WriteLine("[Backspace] Back to Help Menu   [X] Exit Application");
+        }
+        Console.ResetColor();
     }
 
     public virtual NavigationResult InteractiveSelect()
@@ -114,12 +122,14 @@ public abstract class Menu
             DrawMenu(selectedIndex);
 
             var key = Console.ReadKey(true).Key;
+            
+            bool hasOptions = _options != null && _options.Length > 0;
 
-            if (key == ConsoleKey.UpArrow || key == ConsoleKey.W)
+            if ((key == ConsoleKey.UpArrow || key == ConsoleKey.W) && hasOptions)
             {
                 selectedIndex = (selectedIndex == 0) ? _options.Length - 1 : selectedIndex - 1;
             }
-            else if (key == ConsoleKey.DownArrow || key == ConsoleKey.S)
+            else if ((key == ConsoleKey.DownArrow || key == ConsoleKey.S) && hasOptions)
             {
                 selectedIndex = (selectedIndex + 1) % _options.Length;
             }
@@ -127,11 +137,11 @@ public abstract class Menu
             {
                 return NavigationResult.Refresh();
             }
-            else if (key == ConsoleKey.Backspace  || key == ConsoleKey.LeftArrow  || key == ConsoleKey.A)
+            else if (key == ConsoleKey.Backspace || key == ConsoleKey.LeftArrow || key == ConsoleKey.A)
             {
                 return NavigationResult.Back();
             }
-            else if (key == ConsoleKey.Enter|| key == ConsoleKey.Spacebar  || key == ConsoleKey.RightArrow  || key == ConsoleKey.D)
+            else if ((key == ConsoleKey.Enter || key == ConsoleKey.Spacebar || key == ConsoleKey.RightArrow || key == ConsoleKey.D) && hasOptions)
             {
                 return HandleOption(_options[selectedIndex].Key);
             }
