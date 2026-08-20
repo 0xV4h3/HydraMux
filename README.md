@@ -20,8 +20,11 @@ HydraMux is a minimal, thread-safe process execution manager designed to orchest
 
 ```
 📂 HydraMux
-├── 📁 ConversionManager # Main interface, thread pool engine, and telemetry matrix
+├── 📁 ConversionManager # Main interface
 ├── 📁 MockConverter # External worker process emitting raw byte streams
+├── 📁 Core
+├── 📁 MenuImplementation
+├── 📁 MenuLib
 ├── ⚖️ LICENSE
 └── 📝 README.md
 ```
