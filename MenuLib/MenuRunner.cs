@@ -24,19 +24,6 @@ public static class MenuRunner
                     Console.WriteLine("Waiting..., Press any key to continue...");
                     Console.ReadKey(true);
                     break;
-                case NavigationResultType.Refresh:
-                    Type menuType = currentMenu.GetType();
-                    if (typeof(Menu).IsAssignableFrom(menuType))
-                    {
-                        _navigationStack.Pop();
-                        _navigationStack.Push((Menu)Activator.CreateInstance(menuType));
-                    }
-                    else 
-                    {
-                        throw new InvalidOperationException(
-                            $"Failed to refresh the menu. Type '{menuType.FullName}' does not inherit from the Menu class.");
-                    }
-                    break;
                 case NavigationResultType.Back:
                     if (_navigationStack.Count > 1) _navigationStack.Pop();
                     break;

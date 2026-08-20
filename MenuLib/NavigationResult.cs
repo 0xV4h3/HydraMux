@@ -28,11 +28,6 @@ public class NavigationResult
     {
         return new NavigationResult(NavigationResultType.Wait);
     }
-    
-    public static NavigationResult Refresh()
-    {
-        return new NavigationResult(NavigationResultType.Refresh);
-    }
 
     public static NavigationResult Back()
     {

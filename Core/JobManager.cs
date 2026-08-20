@@ -8,8 +8,6 @@ public class JobManager(string workerExePath)
     private readonly List<Job> _jobs = new();
     private readonly object _lock = new(); // some locking primitive
 
-    //TODO methods
-
     public Job AddJob(string input, string output, string options)
     {
         throw new NotImplementedException();

@@ -133,10 +133,6 @@ public abstract class Menu
             {
                 selectedIndex = (selectedIndex + 1) % _options.Length;
             }
-            else if (key == ConsoleKey.R)
-            {
-                return NavigationResult.Refresh();
-            }
             else if (key == ConsoleKey.Backspace || key == ConsoleKey.LeftArrow || key == ConsoleKey.A)
             {
                 return NavigationResult.Back();
@@ -154,11 +150,6 @@ public abstract class Menu
     
     public NavigationResult ExecuteOption(string option)
     {
-        if (option == "refresh")
-        {
-            return NavigationResult.Refresh();
-        }
-        
         if (option == "back")
         {
             return NavigationResult.Back();
