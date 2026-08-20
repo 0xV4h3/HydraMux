@@ -8,7 +8,7 @@ public class JobManager(string workerExePath)
     private readonly List<Job> _jobs = new();
     private readonly object _lock = new();
     private int _nextJobId = 1;
-    
+
     public Job AddJob(string input, string output, string options)
     {
         Job job;
@@ -28,7 +28,7 @@ public class JobManager(string workerExePath)
         ThreadPool.QueueUserWorkItem(_ => Execute(job));
         return job;
     }
-    
+
     private void Execute(Job job)
     {
         throw new NotImplementedException();
@@ -103,8 +103,19 @@ public class JobManager(string workerExePath)
         throw new NotImplementedException();
     }
 
-    public ICollection<JobSnapshot> GetSnapshot()
+    public ICollection<JobSnapshot> GetSnapshot()//----------------------
     {
-        throw new NotImplementedException();
+        lock (_lock)
+        {
+            return _jobs.Select(j => new JobSnapshot(
+                j.Id,
+                j.Input,
+                j.Output,
+                j.Status,
+                j.Status == JobStatus.Running
+                    ? j.ProgressBar?.GetProgressString(j.CurrentTick, j.CustomMessage) ?? j.CustomMessage
+                    : j.ProgressBar?.GetLastString() ?? j.CustomMessage
+            )).ToList();
+        }
     }
 }
