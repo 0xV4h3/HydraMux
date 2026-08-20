@@ -33,11 +33,10 @@ public class JobManager(string workerExePath)
     {
         lock (_lock)
         {
-            if (job.Status == JobStatus.Canceled)
-                return;
+            if (job.Status == JobStatus.Canceled) return;
             job.Status = JobStatus.Running;
         }
-        
+
         if (!File.Exists(_workerExePath))
         {
             lock (_lock) { job.Status = JobStatus.Failed; }
@@ -46,23 +45,95 @@ public class JobManager(string workerExePath)
 
         try
         {
-            // Logic
+            var psi = new ProcessStartInfo
+            {
+                FileName = _workerExePath,
+                Arguments = $"\"{job.Input}\" \"{job.Output}\" {job.Options}",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            var process = new Process { StartInfo = psi };
+
+            lock (_lock)
+            {
+                if (job.Status == JobStatus.Canceled) return;
+                job.LiveProcess = process;
+            }
+
+            process.Start();
+
+            using (StreamReader reader = process.StandardOutput)
+            {
+                string? line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.StartsWith("TOTAL:"))
+                    {
+                        if (ulong.TryParse(line.Substring(6), out ulong total))
+                        {
+                            lock (_lock)
+                            {
+                                job.TotalTicks = total;
+                                job.ProgressBar = new ConsoleProgressBar(total);
+                            }
+                        }
+                    }
+                    else if (line.StartsWith("TICK:"))
+                    {
+                        if (ulong.TryParse(line.Substring(5), out ulong current))
+                        {
+                            lock (_lock)
+                            {
+                                if (job.Status == JobStatus.Running)
+                                {
+                                    job.CurrentTick = current;
+                                    job.CustomMessage = $"{FormatBytes(current)} / {FormatBytes(job.TotalTicks)}";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            process.WaitForExit();
+
+            lock (_lock)
+            {
+                if (job.Status == JobStatus.Running)
+                {
+                    if (process.ExitCode == 0)
+                    {
+                        job.Status = JobStatus.Completed;
+                        job.ProgressBar?.ForceComplete();
+                    }
+                    else
+                    {
+                        job.Status = JobStatus.Failed;
+                    }
+                }
+            }
         }
-        catch (Exception e)
+        catch
         {
             lock (_lock)
             {
-                if (job.Status != JobStatus.Canceled) 
-                    job.Status = JobStatus.Failed;
+                if (job.Status != JobStatus.Canceled) job.Status = JobStatus.Failed;
             }
         }
         finally
         {
-            lock (_lock)
-            {
-                job.LiveProcess = null;
-            }
+            lock (_lock) { job.LiveProcess = null; }
         }
+    }
+
+    private static string FormatBytes(double bytes)
+    {
+        string[] suffix = { "B", "KB", "MB", "GB" };
+        int i = 0;
+        while (bytes >= 1024 && i < suffix.Length - 1) { bytes /= 1024; i++; }
+        return $"{bytes:F1} {suffix[i]}";
     }
 
     public bool CancelJob(int jobId)
