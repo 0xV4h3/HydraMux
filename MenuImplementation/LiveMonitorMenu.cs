@@ -39,50 +39,36 @@ public class LiveMonitorMenu : Menu
 
             if (snapshots.Count == 0)
             {
-                _selectedIndex = 0;
-                Console.WriteLine("\n [ No active or queued jobs available ]                       \n");
+                Console.WriteLine(" [ No active or queued jobs available ] ");
             }
             else
             {
-                _selectedIndex = Math.Clamp(_selectedIndex, 0, snapshots.Count - 1);
+                Console.WriteLine($"{"ID",-4} {"Input",-14} {"Output",-14} {"Status",-10} Progress & Metrics");
+                Console.WriteLine(new string('-', 85));
 
-                int activeCount = snapshots.Count(s => s.Status == JobStatus.Running || s.Status == JobStatus.Queued);
-                Console.WriteLine($"\n Total Jobs: {snapshots.Count} | Active: {activeCount}\n");
+                int runningCount = 0;
+                int queuedCount = 0;
 
-                for (int i = 0; i < snapshots.Count; i++)
+                foreach (var snap in snapshots)
                 {
-                    var snap = snapshots[i];
-                    bool isSelected = (i == _selectedIndex);
+                    if (snap.Status == JobStatus.Running) runningCount++;
+                    else if (snap.Status == JobStatus.Queued) queuedCount++;
 
-                    if (isSelected)
-                    {
-                        Console.BackgroundColor = ConsoleColor.DarkGray;
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write(" > ");
-                    }
-                    else
-                    {
-                        Console.Write("   ");
-                    }
-
-                    Console.Write($"[{snap.Id:D3}] ");
+                    Console.Write($"{snap.Id,-4} {snap.Input,-14} {snap.Output,-14} ");
 
                     SetStatusColor(snap.Status);
-                    Console.Write($"[{snap.Status,-9}] ");
+                    Console.Write($"{snap.Status.ToString(),-10}");
                     Console.ResetColor();
 
-                    if (isSelected) Console.BackgroundColor = ConsoleColor.DarkGray;
-
-                    string displayLine = string.IsNullOrWhiteSpace(snap.ProgressLine)
-                        ? $"{snap.Input} -> {snap.Output}"
+                    string metrics = string.IsNullOrWhiteSpace(snap.ProgressLine)
+                        ? "[░░░░░░░░░░░░░░░]   0.0% | Waiting..."
                         : snap.ProgressLine;
 
-                    if (displayLine.Length > 48)
-                        displayLine = displayLine[..45] + "...";
-
-                    Console.WriteLine(displayLine.PadRight(50));
-                    Console.ResetColor();
+                    Console.WriteLine(metrics);
                 }
+
+                Console.WriteLine(new string('-', 85));
+                Console.WriteLine($"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}");
             }
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
