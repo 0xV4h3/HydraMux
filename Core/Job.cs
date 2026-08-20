@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
-using ConversionManager.Utils;
 
-namespace ConversionManager;
+namespace Core;
 
 public enum JobStatus
 {

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace ConversionManager.Utils;
+namespace Core;
 
 public class ConsoleProgressBar : IDisposable
 {
