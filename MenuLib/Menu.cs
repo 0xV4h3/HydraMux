@@ -133,7 +133,7 @@ public abstract class Menu
             {
                 selectedIndex = (selectedIndex + 1) % _options.Length;
             }
-            else if (key == ConsoleKey.Backspace || key == ConsoleKey.LeftArrow || key == ConsoleKey.A)
+            else if (key == ConsoleKey.Backspace || key == ConsoleKey.LeftArrow || key == ConsoleKey.A || key == ConsoleKey.Escape)
             {
                 return NavigationResult.Back();
             }

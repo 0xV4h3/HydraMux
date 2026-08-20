@@ -3,14 +3,16 @@
 public class LiveMonitorMenu : Menu
 {
     private readonly JobManager _manager;
+    private int _selectedIndex = 0;
+    private bool _isPaused = false;
 
     public LiveMonitorMenu(JobManager manager) : base("")
     {
         _manager = manager;
-
+        
         ConfigureOptionSize(0);
     }
-
+    
     public override NavigationResult InteractiveSelect()
     {
         Console.Clear();
@@ -21,39 +23,53 @@ public class LiveMonitorMenu : Menu
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true).Key;
-
+                
                 if (key == ConsoleKey.Backspace || key == ConsoleKey.LeftArrow || key == ConsoleKey.A)
                 {
                     return NavigationResult.Back();
                 }
             }
-
+            
             Console.SetCursorPosition(0, 0);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("=== LIVE MONITOR ===\n");
             Console.ResetColor();
 
-            var snapshots = _manager.GetSnapshot();
+            var snapshots = _manager.GetSnapshot().ToList();
 
-            int runningCount = 0;
-            int queuedCount = 0;
-
-            foreach (var snapshot in snapshots)
+            if (snapshots.Count == 0)
             {
-                if (snapshot.Status == JobStatus.Running) runningCount++;
-                if (snapshot.Status == JobStatus.Queued) queuedCount++;
-
-                Console.Write($"{snapshot.Id,-5}{Truncate(snapshot.Input, 13),-15}{Truncate(snapshot.Output, 13),-15}");
-
-                SetStatusColor(snapshot.Status);
-                Console.Write($"{snapshot.Status,-12}");
-                Console.ResetColor();
-
-                Console.WriteLine(snapshot.ProgressLine);
+                Console.WriteLine(" [ No active or queued jobs available ] ");
             }
+            else
+            {
+                Console.WriteLine($"{"ID",-4} {"Input",-14} {"Output",-14} {"Status",-10} Progress & Metrics");
+                Console.WriteLine(new string('-', 85));
 
-            Console.WriteLine(new string('-', 80));
-            Console.WriteLine($"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}");
+                int runningCount = 0;
+                int queuedCount = 0;
+
+                foreach (var snap in snapshots)
+                {
+                    if (snap.Status == JobStatus.Running) runningCount++;
+                    else if (snap.Status == JobStatus.Queued) queuedCount++;
+
+                    Console.Write($"{snap.Id,-4} {snap.Input,-14} {snap.Output,-14} ");
+
+                    SetStatusColor(snap.Status);
+                    Console.Write($"{snap.Status.ToString(),-10}");
+                    Console.ResetColor();
+
+                    string metrics = string.IsNullOrWhiteSpace(snap.ProgressLine)
+                        ? "[░░░░░░░░░░░░░░░]   0.0% | Waiting..."
+                        : snap.ProgressLine;
+
+                    Console.WriteLine(metrics);
+                }
+
+                Console.WriteLine(new string('-', 85));
+                Console.WriteLine($"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}");
+            }
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("\n------------------------------------------------------------");
@@ -63,14 +79,9 @@ public class LiveMonitorMenu : Menu
             Thread.Sleep(300);
         }
     }
-
+    
     protected override NavigationResult HandleOption(string option) => NavigationResult.Back();
-
-    private static string Truncate(string value, int maxLength)
-    {
-        if (string.IsNullOrEmpty(value)) return "";
-        return value.Length <= maxLength ? value : value[..(maxLength - 3)] + "...";
-    }
+    
     private static void SetStatusColor(JobStatus status)
     {
         Console.ForegroundColor = status switch
