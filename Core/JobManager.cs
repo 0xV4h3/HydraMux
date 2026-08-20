@@ -98,10 +98,6 @@ public class JobManager(string workerExePath)
                                || inner is System.ComponentModel.Win32Exception);
         }
     }
-    private void CancelInternal(Job job)
-    {
-        throw new NotImplementedException();
-    }
 
     public ICollection<JobSnapshot> GetSnapshot()
     {
