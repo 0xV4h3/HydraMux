@@ -4,7 +4,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        ulong totalBytes = 300 * 1024 * 1024;
+        ulong totalBytes = 1024 * 1024 * 1024;
         ulong bufferSize = 4 * 1024 * 1024;
         ulong currentPosition = 0;
 
