@@ -6,11 +6,27 @@ public class JobManager(string workerExePath)
 {
     private readonly string _workerExePath = workerExePath;
     private readonly List<Job> _jobs = new();
-    private readonly object _lock = new(); // some locking primitive
-
+    private readonly object _lock = new();
+    private int _nextJobId = 1;
+    
     public Job AddJob(string input, string output, string options)
     {
-        throw new NotImplementedException();
+        Job job;
+        lock (_lock)
+        {
+            job = new Job
+            {
+                Id = _nextJobId++,
+                Input = input,
+                Output = output,
+                Options = options,
+                Status = JobStatus.Queued
+            };
+            _jobs.Add(job);
+        }
+
+        ThreadPool.QueueUserWorkItem(_ => Execute(job));
+        return job;
     }
     
     private void Execute(Job job)
