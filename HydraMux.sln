@@ -4,6 +4,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConversionManager", "Conver
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MockConverter", "MockConverter\MockConverter.csproj", "{0C0766C0-5C7E-402C-BAFE-671065C9B9B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MenuLib", "MenuLib\MenuLib.csproj", "{187A6EEF-EA72-43E5-8A9D-DC8CEA12FCF9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MenuImplementation", "MenuImplementation\MenuImplementation.csproj", "{A1E0F708-5DE4-4A66-8CAB-E3F9565BC4B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{293D193F-96F3-416C-B2D9-29E04E80E61A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +24,17 @@ Global
 		{0C0766C0-5C7E-402C-BAFE-671065C9B9B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C0766C0-5C7E-402C-BAFE-671065C9B9B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C0766C0-5C7E-402C-BAFE-671065C9B9B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{187A6EEF-EA72-43E5-8A9D-DC8CEA12FCF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{187A6EEF-EA72-43E5-8A9D-DC8CEA12FCF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{187A6EEF-EA72-43E5-8A9D-DC8CEA12FCF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{187A6EEF-EA72-43E5-8A9D-DC8CEA12FCF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1E0F708-5DE4-4A66-8CAB-E3F9565BC4B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1E0F708-5DE4-4A66-8CAB-E3F9565BC4B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1E0F708-5DE4-4A66-8CAB-E3F9565BC4B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1E0F708-5DE4-4A66-8CAB-E3F9565BC4B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{293D193F-96F3-416C-B2D9-29E04E80E61A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{293D193F-96F3-416C-B2D9-29E04E80E61A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{293D193F-96F3-416C-B2D9-29E04E80E61A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{293D193F-96F3-416C-B2D9-29E04E80E61A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

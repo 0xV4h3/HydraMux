@@ -1,36 +1,19 @@
-﻿namespace ConversionManager;
+﻿using Core;
+using MenuLib;
+using MenuImplementation;
+
+namespace ConversionManager;
 
 class Program
 {
     static void Main(string[] args)
     {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        
         string workerExePath = ResolveWorkerExePath();
         var manager = new JobManager(workerExePath);
 
-        while (true)
-        {
-            Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("=== CONVERSION MANAGER ===");
-            Console.ResetColor();
-            Console.WriteLine("1. Add Job");
-            Console.WriteLine("2. Monitor Progress (Live)");
-            Console.WriteLine("3. Cancel One Job");
-            Console.WriteLine("4. Cancel All Jobs");
-            Console.WriteLine("5. Help Screen");
-            Console.WriteLine("6. Exit");
-            Console.Write("\nSelect option: ");
-
-            switch (Console.ReadLine())
-            {
-                case "1": AddJob(manager); break;
-                case "2": ShowMonitor(manager); break;
-                case "3": CancelSingleJob(manager); break;
-                case "4": CancelAllJobs(manager); break;
-                case "5": ShowHelp(); break;
-                case "6": return;
-            }
-        }
+        MenuRunner.Run(new AppMainMenu(manager));
     }
 
     private static string ResolveWorkerExePath() // build MockConverter first so it can find MockConverter.exe
@@ -44,10 +27,4 @@ class Program
 
         return File.Exists(fallback) ? fallback : primary;
     }
-    
-    private static void AddJob(JobManager manager) {}
-    private static void ShowMonitor(JobManager manager) {}
-    private static void CancelSingleJob(JobManager manager) {}
-    private static void CancelAllJobs(JobManager manager) {}
-    private static void ShowHelp() {}
 }
