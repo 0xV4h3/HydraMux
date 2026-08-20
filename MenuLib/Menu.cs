@@ -85,8 +85,8 @@ public abstract class Menu
                 var option = _options[i];
                 if (i == selectedIndex)
                 {
-                    Console.BackgroundColor = ConsoleColor.Magenta;
-                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.BackgroundColor = ConsoleColor.DarkBlue;
+                    Console.ForegroundColor = ConsoleColor.White;
                     Console.WriteLine($"> {option.Value} <");
                     Console.ResetColor();
                 }
