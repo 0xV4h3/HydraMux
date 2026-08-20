@@ -3,8 +3,6 @@
 public class LiveMonitorMenu : Menu
 {
     private readonly JobManager _manager;
-    private int _selectedIndex = 0;
-    private bool _isPaused = false;
 
     public LiveMonitorMenu(JobManager manager) : base("")
     {
