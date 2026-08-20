@@ -31,7 +31,38 @@ public class JobManager(string workerExePath)
 
     private void Execute(Job job)
     {
-        throw new NotImplementedException();
+        lock (_lock)
+        {
+            if (job.Status == JobStatus.Canceled)
+                return;
+            job.Status = JobStatus.Running;
+        }
+        
+        if (!File.Exists(_workerExePath))
+        {
+            lock (_lock) { job.Status = JobStatus.Failed; }
+            return;
+        }
+
+        try
+        {
+            // Logic
+        }
+        catch (Exception e)
+        {
+            lock (_lock)
+            {
+                if (job.Status != JobStatus.Canceled) 
+                    job.Status = JobStatus.Failed;
+            }
+        }
+        finally
+        {
+            lock (_lock)
+            {
+                job.LiveProcess = null;
+            }
+        }
     }
 
     public bool CancelJob(int jobId)
