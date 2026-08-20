@@ -47,7 +47,7 @@ The monitoring screen dynamically updates metrics for every queued and running t
 ```text
 === LIVE MONITOR (Press any key to return to menu) ===
 
-ID   Input        Output       Status       Progress & Metrics Using Your ProgressBar
+ID   Input        Output       Status       Progress & Metrics
 ----------------------------------------------------------------------------------------------------
 1    movie.mp4    out_1.mkv    Running      [████████░░░░░░░] 53.3% | 24.1 MB/s | ETA: 00:06 | 160.0 MB / 300.0 MB
 2    clip.avi     out_2.mp4    Queued       [░░░░░░░░░░░░░░░] 0.0% | Waiting...
