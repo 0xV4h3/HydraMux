@@ -10,6 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Core\Core.csproj" />
       <ProjectReference Include="..\MenuImplementation\MenuImplementation.csproj" />
+      <ProjectReference Include="..\MockConverter\MockConverter.csproj" />
     </ItemGroup>
 
 </Project>
