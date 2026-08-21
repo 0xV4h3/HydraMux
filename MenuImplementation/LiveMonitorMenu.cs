@@ -15,7 +15,7 @@ public class LiveMonitorMenu : Menu
     private static readonly int DefaultMetricsLength = DefaultWaitingMetrics.Length;
 
     private const string NoJobsMessage = " [ No active or queued jobs available ] ";
-    private const int MaxClearWidth = 120;
+    private const int StaticPartLength = IdWidth + InputWidth + OutputWidth + StatusWidth + 4;
 
     public LiveMonitorMenu(JobManager manager) : base("")
     {
@@ -55,7 +55,7 @@ public class LiveMonitorMenu : Menu
 
             if (snapshots.Count == 0)
             {
-                Console.WriteLine(NoJobsMessage.PadRight(MaxClearWidth));
+                Console.WriteLine(NoJobsMessage.PadRight(Console.WindowWidth - 1));
                 currentLineCount++;
             }
             else
@@ -66,9 +66,11 @@ public class LiveMonitorMenu : Menu
                 
                 int tableLineWidth = HeaderColumnsWidth + maxMetricsLength;
                 
-                Console.WriteLine($"{"ID",-IdWidth} {"Input File",-InputWidth} {"Output File",-OutputWidth} {"Status",-StatusWidth} Progress & Metrics");
+                string headerLine = $"{"ID",-IdWidth} {"Input File",-InputWidth} {"Output File",-OutputWidth} {"Status",-StatusWidth} Progress & Metrics";
+                Console.WriteLine(headerLine.PadRight(Console.WindowWidth - 1));
                 
-                Console.WriteLine(new string('-', tableLineWidth));
+                string topSeparator = new string('-', tableLineWidth);
+                Console.WriteLine(topSeparator.PadRight(Console.WindowWidth - 1));
                 currentLineCount += 2;
 
                 int runningCount = 0;
@@ -81,8 +83,9 @@ public class LiveMonitorMenu : Menu
 
                     string inputName = TruncateWithEllipsis(Path.GetFileName(snap.Input), InputWidth - 1);
                     string outputName = TruncateWithEllipsis(Path.GetFileName(snap.Output), OutputWidth - 1);
-                    
-                    Console.Write($"{snap.Id,-IdWidth} {inputName,-InputWidth} {outputName,-OutputWidth} ");
+
+                    string rowStart = $"{snap.Id,-IdWidth} {inputName,-InputWidth} {outputName,-OutputWidth} ";
+                    Console.Write(rowStart);
 
                     SetStatusColor(snap.Status);
                     Console.Write($"{snap.Status.ToString(),-StatusWidth} ");
@@ -92,14 +95,21 @@ public class LiveMonitorMenu : Menu
                         ? DefaultWaitingMetrics
                         : snap.ProgressLine;
 
-                    Console.WriteLine(metrics.PadRight(maxMetricsLength));
+                    int remainingWidth = Console.WindowWidth - StaticPartLength - 1;
+                    
+                    if (remainingWidth > 0)
+                        Console.WriteLine(metrics.PadRight(remainingWidth));
+                    else
+                        Console.WriteLine(metrics);
+                    
                     currentLineCount++;
                 }
 
-                Console.WriteLine(new string('-', tableLineWidth));
+                string bottomSeparator = new string('-', tableLineWidth);
+                Console.WriteLine(bottomSeparator.PadRight(Console.WindowWidth - 1));
                 
                 string totalLine = $"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}";
-                Console.WriteLine(totalLine.PadRight(tableLineWidth));
+                Console.WriteLine(totalLine.PadRight(Console.WindowWidth - 1));
                 currentLineCount += 2;
             }
 
