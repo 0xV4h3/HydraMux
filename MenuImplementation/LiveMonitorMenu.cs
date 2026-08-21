@@ -15,6 +15,8 @@ public class LiveMonitorMenu : Menu
     {
         Console.Clear();
         Console.CursorVisible = false;
+        
+        int lastLineCount = 0; 
 
         while (true)
         {
@@ -29,20 +31,25 @@ public class LiveMonitorMenu : Menu
             }
 
             Console.SetCursorPosition(0, 0);
+            int currentLineCount = 0;
+
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("=== LIVE MONITOR ===\n");
             Console.ResetColor();
+            currentLineCount += 2;
 
             var snapshots = _manager.GetSnapshot().ToList();
 
             if (snapshots.Count == 0)
             {
-                Console.WriteLine(" [ No active or queued jobs available ] ");
+                Console.WriteLine(" [ No active or queued jobs available ] ".PadRight(120));
+                currentLineCount++;
             }
             else
             {
                 Console.WriteLine($"{"ID",-4} {"Input",-14} {"Output",-14} {"Status",-10} Progress & Metrics");
                 Console.WriteLine(new string('-', 85));
+                currentLineCount += 2;
 
                 int runningCount = 0;
                 int queuedCount = 0;
@@ -62,17 +69,32 @@ public class LiveMonitorMenu : Menu
                         ? "[░░░░░░░░░░░░░░░]   0.0% | Waiting..."
                         : snap.ProgressLine;
 
-                    Console.WriteLine(metrics);
+                    Console.WriteLine(metrics.PadRight(80));
+                    currentLineCount++;
                 }
 
                 Console.WriteLine(new string('-', 85));
-                Console.WriteLine($"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}");
+                
+                string totalLine = $"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}";
+                Console.WriteLine(totalLine.PadRight(85));
+                currentLineCount += 2;
             }
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
             Console.WriteLine("\n------------------------------------------------------------");
             Console.WriteLine("[Backspace] Back to Main Menu");
             Console.ResetColor();
+            currentLineCount += 3;
+            
+            if (currentLineCount < lastLineCount)
+            {
+                string blankLine = new string(' ', 120);
+                for (int i = currentLineCount; i < lastLineCount; i++)
+                {
+                    Console.WriteLine(blankLine);
+                }
+            }
+            lastLineCount = currentLineCount;
 
             Thread.Sleep(300);
         }
