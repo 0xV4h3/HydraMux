@@ -3,6 +3,19 @@
 public class LiveMonitorMenu : Menu
 {
     private readonly JobManager _manager;
+    
+    private const int IdWidth = 4;
+    private const int InputWidth = 20;
+    private const int OutputWidth = 20;
+    private const int StatusWidth = 10;
+    
+    private const int HeaderColumnsWidth = IdWidth + InputWidth + OutputWidth + StatusWidth + 4;
+    
+    private const string DefaultWaitingMetrics = "[░░░░░░░░░░░░░░░]   0.0% | Waiting...";
+    private static readonly int DefaultMetricsLength = DefaultWaitingMetrics.Length;
+
+    private const string NoJobsMessage = " [ No active or queued jobs available ] ";
+    private const int MaxClearWidth = 120;
 
     public LiveMonitorMenu(JobManager manager) : base("")
     {
@@ -42,13 +55,20 @@ public class LiveMonitorMenu : Menu
 
             if (snapshots.Count == 0)
             {
-                Console.WriteLine(" [ No active or queued jobs available ] ".PadRight(120));
+                Console.WriteLine(NoJobsMessage.PadRight(MaxClearWidth));
                 currentLineCount++;
             }
             else
             {
-                Console.WriteLine($"{"ID",-4} {"Input File",-20} {"Output File",-20} {"Status",-10} Progress & Metrics");
-                Console.WriteLine(new string('-', 110));
+                int maxMetricsLength = snapshots.Max(s => string.IsNullOrWhiteSpace(s.ProgressLine) 
+                    ? DefaultMetricsLength 
+                    : s.ProgressLine.Length);
+                
+                int tableLineWidth = HeaderColumnsWidth + maxMetricsLength;
+                
+                Console.WriteLine($"{"ID",-IdWidth} {"Input File",-InputWidth} {"Output File",-OutputWidth} {"Status",-StatusWidth} Progress & Metrics");
+                
+                Console.WriteLine(new string('-', tableLineWidth));
                 currentLineCount += 2;
 
                 int runningCount = 0;
@@ -59,30 +79,27 @@ public class LiveMonitorMenu : Menu
                     if (snap.Status == JobStatus.Running) runningCount++;
                     else if (snap.Status == JobStatus.Queued) queuedCount++;
 
-                    string inputName = Path.GetFileName(snap.Input);
-                    string outputName = Path.GetFileName(snap.Output);
+                    string inputName = TruncateWithEllipsis(Path.GetFileName(snap.Input), InputWidth - 1);
+                    string outputName = TruncateWithEllipsis(Path.GetFileName(snap.Output), OutputWidth - 1);
                     
-                    if (inputName.Length > 19) inputName = inputName.Substring(0, 16) + "...";
-                    if (outputName.Length > 19) outputName = outputName.Substring(0, 16) + "...";
-
-                    Console.Write($"{snap.Id,-4} {inputName,-20} {outputName,-20} ");
+                    Console.Write($"{snap.Id,-IdWidth} {inputName,-InputWidth} {outputName,-OutputWidth} ");
 
                     SetStatusColor(snap.Status);
-                    Console.Write($"{snap.Status.ToString(),-10}");
+                    Console.Write($"{snap.Status.ToString(),-StatusWidth} ");
                     Console.ResetColor();
 
                     string metrics = string.IsNullOrWhiteSpace(snap.ProgressLine)
-                        ? "[░░░░░░░░░░░░░░░]   0.0% | Waiting..."
+                        ? DefaultWaitingMetrics
                         : snap.ProgressLine;
 
-                    Console.WriteLine(metrics.PadRight(80));
+                    Console.WriteLine(metrics.PadRight(maxMetricsLength));
                     currentLineCount++;
                 }
 
-                Console.WriteLine(new string('-', 110));
+                Console.WriteLine(new string('-', tableLineWidth));
                 
                 string totalLine = $"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}";
-                Console.WriteLine(totalLine.PadRight(110));
+                Console.WriteLine(totalLine.PadRight(tableLineWidth));
                 currentLineCount += 2;
             }
 
@@ -107,6 +124,12 @@ public class LiveMonitorMenu : Menu
     }
 
     protected override NavigationResult HandleOption(string option) => NavigationResult.Back();
+
+    private static string TruncateWithEllipsis(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength) return text;
+        return text.Substring(0, maxLength - 3) + "...";
+    }
 
     private static void SetStatusColor(JobStatus status)
     {
