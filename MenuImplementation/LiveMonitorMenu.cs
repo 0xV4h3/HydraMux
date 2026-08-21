@@ -47,8 +47,8 @@ public class LiveMonitorMenu : Menu
             }
             else
             {
-                Console.WriteLine($"{"ID",-4} {"Input",-14} {"Output",-14} {"Status",-10} Progress & Metrics");
-                Console.WriteLine(new string('-', 85));
+                Console.WriteLine($"{"ID",-4} {"Input File",-20} {"Output File",-20} {"Status",-10} Progress & Metrics");
+                Console.WriteLine(new string('-', 110));
                 currentLineCount += 2;
 
                 int runningCount = 0;
@@ -59,7 +59,13 @@ public class LiveMonitorMenu : Menu
                     if (snap.Status == JobStatus.Running) runningCount++;
                     else if (snap.Status == JobStatus.Queued) queuedCount++;
 
-                    Console.Write($"{snap.Id,-4} {snap.Input,-14} {snap.Output,-14} ");
+                    string inputName = Path.GetFileName(snap.Input);
+                    string outputName = Path.GetFileName(snap.Output);
+                    
+                    if (inputName.Length > 19) inputName = inputName.Substring(0, 16) + "...";
+                    if (outputName.Length > 19) outputName = outputName.Substring(0, 16) + "...";
+
+                    Console.Write($"{snap.Id,-4} {inputName,-20} {outputName,-20} ");
 
                     SetStatusColor(snap.Status);
                     Console.Write($"{snap.Status.ToString(),-10}");
@@ -73,10 +79,10 @@ public class LiveMonitorMenu : Menu
                     currentLineCount++;
                 }
 
-                Console.WriteLine(new string('-', 85));
+                Console.WriteLine(new string('-', 110));
                 
                 string totalLine = $"Total Jobs: {snapshots.Count} | Running: {runningCount} | Queued: {queuedCount}";
-                Console.WriteLine(totalLine.PadRight(85));
+                Console.WriteLine(totalLine.PadRight(110));
                 currentLineCount += 2;
             }
 
