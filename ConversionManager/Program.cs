@@ -10,11 +10,10 @@ class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         
-        string ffmpegFolder = await FFmpegBootstrapper.EnsureBinariesInstalledAsync();
+        var (ffmpegPath, ffprobePath) = await FFmpegBootstrapper.EnsureBinariesInstalledAsync();
         
-        bool isWindows = OperatingSystem.IsWindows();
-        string ffmpegPath = Path.Combine(ffmpegFolder, isWindows ? "ffmpeg.exe" : "ffmpeg");
-        string ffprobePath = Path.Combine(ffmpegFolder, isWindows ? "ffprobe.exe" : "ffprobe");
+        Console.WriteLine($"FFmpeg is at: {ffmpegPath}");
+        Console.WriteLine($"FFprobe is at: {ffprobePath}");
 
         var manager = new JobManager(ffmpegPath, ffprobePath);
         MenuRunner.Run(new AppMainMenu(manager));
