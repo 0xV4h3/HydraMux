@@ -10,8 +10,16 @@ class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         
-        var (ffmpegPath, ffprobePath) = await FFmpegBootstrapper.EnsureBinariesInstalledAsync();
-        
+        var (success, ffDirs) = await FFmpegBootstrapper.TryEnsureBinariesInstalledAsync();
+
+        if (!success || ffDirs is not { } validDirs)
+        {
+            Console.WriteLine("Failed to find or install FFMpeg binaries");
+            return;
+        }
+
+        var (ffmpegPath, ffprobePath) = validDirs;
+
         Console.WriteLine($"FFmpeg is at: {ffmpegPath}");
         Console.WriteLine($"FFprobe is at: {ffprobePath}");
 
