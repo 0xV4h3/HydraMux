@@ -11,6 +11,8 @@ public class JobManager(string ffmpegPath, string ffprobePath)
     private readonly object _lock = new();
     private int _nextJobId = 1;
 
+    private const int MaxStderrLinesKept = 20;
+
     public Job AddJob(string input, string output, string options)
     {
         string fullInput = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), input));
@@ -42,101 +44,178 @@ public class JobManager(string ffmpegPath, string ffprobePath)
 
     private void Execute(Job job)
     {
-        // lock (_lock)
-        // {
-        //     if (job.Status == JobStatus.Canceled) return;
-        //     job.Status = JobStatus.Running;
-        // }
-        //
-        // if (!File.Exists(_workerExePath))
-        // {
-        //     lock (_lock) { job.Status = JobStatus.Failed; }
-        //     return;
-        // }
-        //
-        // try
-        // {
-        //     var psi = new ProcessStartInfo
-        //     {
-        //         FileName = _workerExePath,
-        //         Arguments = $"\"{job.Input}\" \"{job.Output}\" {job.Options}",
-        //         RedirectStandardOutput = true,
-        //         UseShellExecute = false,
-        //         CreateNoWindow = true
-        //     };
-        //
-        //     var process = new Process { StartInfo = psi };
-        //
-        //     lock (_lock)
-        //     {
-        //         if (job.Status == JobStatus.Canceled) return;
-        //         job.LiveProcess = process;
-        //     }
-        //
-        //     process.Start();
-        //
-        //     using (StreamReader reader = process.StandardOutput)
-        //     {
-        //         string? line;
-        //         while ((line = reader.ReadLine()) != null)
-        //         {
-        //             if (line.StartsWith("TOTAL:"))
-        //             {
-        //                 if (ulong.TryParse(line.Substring(6), out ulong total))
-        //                 {
-        //                     lock (_lock)
-        //                     {
-        //                         job.TotalTicks = total;
-        //                         job.ProgressBar = new ConsoleProgressBar(total);
-        //                     }
-        //                 }
-        //             }
-        //             else if (line.StartsWith("TICK:"))
-        //             {
-        //                 if (ulong.TryParse(line.Substring(5), out ulong current))
-        //                 {
-        //                     lock (_lock)
-        //                     {
-        //                         if (job.Status == JobStatus.Running)
-        //                         {
-        //                             job.CurrentTick = current;
-        //                             job.CustomMessage = $"{FormatBytes(current)} / {FormatBytes(job.TotalTicks)}";
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        //
-        //     process.WaitForExit();
-        //
-        //     lock (_lock)
-        //     {
-        //         if (job.Status == JobStatus.Running)
-        //         {
-        //             if (process.ExitCode == 0)
-        //             {
-        //                 job.Status = JobStatus.Completed;
-        //                 job.ProgressBar?.ForceComplete();
-        //             }
-        //             else
-        //             {
-        //                 job.Status = JobStatus.Failed;
-        //             }
-        //         }
-        //     }
-        // }
-        // catch
-        // {
-        //     lock (_lock)
-        //     {
-        //         if (job.Status != JobStatus.Canceled) job.Status = JobStatus.Failed;
-        //     }
-        // }
-        // finally
-        // {
-        //     lock (_lock) { job.LiveProcess = null; }
-        // }
+        lock (_lock)
+        {
+            if (job.Status == JobStatus.Canceled) return;
+            job.Status = JobStatus.Running;
+        }
+
+        var stderrTail = new List<string>(MaxStderrLinesKept);
+        var stderrLock = new object();
+
+        void AppendStderrLine(string line)
+        {
+            lock (stderrLock)
+            {
+                stderrTail.Add(line);
+                if (stderrTail.Count > MaxStderrLinesKept)
+                    stderrTail.RemoveAt(0);
+            }
+        }
+
+        try
+        {
+            ulong totalMilliseconds = GetVideoDurationMs(job.Input);
+            if (totalMilliseconds == 0) totalMilliseconds = 1;
+
+            long inputSizeBytes = new FileInfo(job.Input).Length;
+            string inputSizeStr = FormatBytes(inputSizeBytes);
+
+            lock (_lock)
+            {
+                job.TotalTicks = totalMilliseconds;
+                job.ProgressBar = new ConsoleProgressBar(totalMilliseconds, 15, speed =>
+                {
+                    double speedRatio = speed / 1000.0;
+                    return $"{speedRatio:F1}x";
+                });
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = _ffmpegPath,
+                Arguments = $"-progress pipe:1 -i \"{job.Input}\" {job.Options} -y \"{job.Output}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data == null) return;
+
+                if (e.Data.StartsWith("out_time_us="))
+                {
+                    string usStr = e.Data.Substring("out_time_us=".Length).Trim();
+                    if (long.TryParse(usStr, out long microseconds) && microseconds > 0)
+                    {
+                        ulong currentMs = (ulong)(microseconds / 1000);
+
+                        lock (_lock)
+                        {
+                            if (job.Status == JobStatus.Running)
+                            {
+                                job.CurrentTick = Math.Min(currentMs, job.TotalTicks);
+
+                                long currentOutputSize = File.Exists(job.Output) ? new FileInfo(job.Output).Length : 0;
+                                string outputSizeStr = FormatBytes(currentOutputSize);
+
+                                job.CustomMessage = $"Out: {outputSizeStr} | Src: {inputSizeStr}";
+                            }
+                        }
+                    }
+                }
+            };
+
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data == null) return;
+                AppendStderrLine(e.Data);
+            };
+
+            lock (_lock)
+            {
+                if (job.Status == JobStatus.Canceled) return;
+                job.LiveProcess = process;
+            }
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            process.WaitForExit();
+
+            lock (_lock)
+            {
+                if (job.Status == JobStatus.Running)
+                {
+                    if (process.ExitCode == 0)
+                    {
+                        job.Status = JobStatus.Completed;
+                        job.ProgressBar?.ForceComplete();
+
+                        long finalSize = File.Exists(job.Output) ? new FileInfo(job.Output).Length : 0;
+                        job.CustomMessage = $"Final: {FormatBytes(finalSize)} | Src: {inputSizeStr}";
+                    }
+                    else
+                    {
+                        job.Status = JobStatus.Failed;
+                        job.CustomMessage = BuildFailureMessage(process.ExitCode, stderrTail, stderrLock);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            lock (_lock)
+            {
+                if (job.Status != JobStatus.Canceled)
+                {
+                    job.Status = JobStatus.Failed;
+                    job.CustomMessage = ex.Message;
+                }
+            }
+        }
+        finally
+        {
+            lock (_lock) { job.LiveProcess = null; }
+        }
+    }
+
+    private static string BuildFailureMessage(int exitCode, List<string> stderrTail, object stderrLock)
+    {
+        string lastLine;
+        lock (stderrLock)
+        {
+            lastLine = stderrTail.LastOrDefault(l => !string.IsNullOrWhiteSpace(l)) ?? "no stderr output captured";
+        }
+
+        const int maxLen = 160;
+        if (lastLine.Length > maxLen)
+            lastLine = lastLine.Substring(0, maxLen) + "...";
+
+        return $"Error (Code: {exitCode}): {lastLine}";
+    }
+
+    private ulong GetVideoDurationMs(string inputPath)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = _ffprobePath,
+                Arguments = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{inputPath}\"",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process == null) return 0;
+
+            string output = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExit();
+
+            if (double.TryParse(output, CultureInfo.InvariantCulture, out double seconds))
+            {
+                return (ulong)(seconds * 1000.0);
+            }
+        }
+        catch { }
+        return 0;
     }
 
     private static string ResolveDestinationPath(string sourcePath, string destinationPath)
@@ -191,7 +270,7 @@ public class JobManager(string ffmpegPath, string ffprobePath)
 
         return candidate;
     }
-    
+
     private static string FormatBytes(double bytes)
     {
         string[] suffix = { "B", "KB", "MB", "GB" };
