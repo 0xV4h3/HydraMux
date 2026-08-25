@@ -7,7 +7,27 @@ namespace Core;
 
 public static class FFmpegBootstrapper
 {
-    public static async Task<(string FFmpegPath, string FFprobePath)> EnsureBinariesInstalledAsync()
+    public static async Task<(bool Success, FFDirs? Dirs)> TryEnsureBinariesInstalledAsync()
+    {
+        try
+        {
+            FFDirs ffDirs = await EnsureBinariesInstalledAsync();
+            
+            if (!ffDirs.IsValid) 
+            {
+                return (false, null);
+            }
+
+            return (true, ffDirs);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Failed to check FFMpeg binaries {e.Message}");
+            return (false, null);
+        }
+    }
+    
+    public static async Task<FFDirs> EnsureBinariesInstalledAsync()
     {
         bool isWindows = OperatingSystem.IsWindows();
         string ffmpegExecutable = isWindows ? "ffmpeg.exe" : "ffmpeg";
@@ -23,7 +43,7 @@ public static class FFmpegBootstrapper
             Console.WriteLine($"Using system ffmpeg from: {systemFFmpeg}");
             Console.WriteLine($"Using system ffprobe from: {systemFFprobe}");
 
-            return (systemFFmpeg, systemFFprobe);
+            return new FFDirs(systemFFmpeg, systemFFprobe);
         }
 
         string binariesFolderName = "FFmpegBinaries";
@@ -38,10 +58,19 @@ public static class FFmpegBootstrapper
             Console.WriteLine("FFmpeg not found in system PATH. Downloading binaries for the current platform...");
 
             var options = new FFOptions { BinaryFolder = binariesFolder };
-            await FFMpegDownloader.DownloadBinaries(
-                version: FFMpegVersions.LatestAvailable,
-                binaries: FFMpegBinaries.FFMpeg | FFMpegBinaries.FFProbe,
-                options: options);
+
+            try
+            {
+                await FFMpegDownloader.DownloadBinaries(
+                    version: FFMpegVersions.LatestAvailable,
+                    binaries: FFMpegBinaries.FFMpeg | FFMpegBinaries.FFProbe,
+                    options: options);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Failed to download binaries {e.Message}");
+                throw;
+            }
 
             if (!isWindows)
             {
@@ -55,7 +84,7 @@ public static class FFmpegBootstrapper
         GlobalFFOptions.Configure(o => o.BinaryFolder = binariesFolder);
         Console.WriteLine($"Using local binaries from: {binariesFolder}");
 
-        return (localFFmpegPath, localFFprobePath);
+        return new FFDirs(localFFmpegPath, localFFprobePath);
     }
 
     private static void ConfigureBinaryFolderIfShared(string ffmpegPath, string ffprobePath)
